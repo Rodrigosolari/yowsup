@@ -87,7 +87,8 @@ class YowNetworkLayer(YowLayer, ConnectionCallbacks):
         self._disconnect_reason = None
         self._dispatcher = self.__create_dispatcher(self.getProp(self.PROP_DISPATCHER, self.DISPATCHER_DEFAULT))
         self.state = self.__class__.STATE_CONNECTING
-        endpoint = self.getProp(self.__class__.PROP_ENDPOINT)
+        #endpoint = self.getProp(self.__class__.PROP_ENDPOINT)
+        endpoint = ('chat.cdn.whatsapp.net',443) # Only connect in this endpoint.
         logger.info("Connecting to %s:%s" % endpoint)
         self._dispatcher.connect(endpoint)
 

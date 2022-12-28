@@ -42,6 +42,5 @@ class WANoiseProtocolHandshakeWorker(threading.Thread):
             self._protocol.start(self._stream, self._client_config, self._s, self._rs)
         except HandshakeFailedException as e:
             error = e
-
         if self._finish_callback is not None:
             self._finish_callback(error)

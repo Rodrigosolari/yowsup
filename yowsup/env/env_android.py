@@ -17,15 +17,15 @@ class AndroidYowsupEnv(YowsupEnv):
         "YHNtYoIvt5R3X6YZylbPftF/8ayWTALBgcqhkjOOAQDBQADLwAwLAIUAKYCp0d6z4QQdyN74JDfQ2WCyi8CFDUM4CaNB+ceVXd" \
         "KtOrNTQcc0e+t"
 
-    _MD5_CLASSES = "XJnX1aI5e1bGaWmv350l+g=="
+    _MD5_CLASSES = "Qc0kUxteJdDJSpeLPeHMKQ=="
     _KEY = "eQV5aq/Cg63Gsq1sshN9T3gh+UUp0wIw0xgHYT1bnCjEqOJQKCRrWxdAe2yvsDeCJL+Y4G3PRD2HUF7oUgiGo8vGlNJOaux26k+A2F3hj8A="
 
-    _VERSION = "2.22.2.73" # 2.20.206.24
+    _VERSION = "2.22.23.84" # 2.20.206.24
     _OS_NAME = "Android"
     _OS_VERSION = "8.0.0"
-    _DEVICE_NAME = "star2lte"
-    _MANUFACTURER = "samsung"
-    _BUILD_VERSION = "star2ltexx-user 8.0.0 R16NW G965FXXU1ARCC release-keys"
+    _DEVICE_NAME = "Pixel_4a_(5G)"
+    _MANUFACTURER = "Googole"
+    _BUILD_VERSION = 'google-user 7.1.2 20171130.276299 release-keys'
     _AXOLOTL = True
 
     def getVersion(self):

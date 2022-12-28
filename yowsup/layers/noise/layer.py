@@ -92,7 +92,7 @@ class YowNoiseLayer(YowLayer):
 
             self._rs = remote_static
             yowsupenv = YowsupEnv.getAndroidEnv()
-            
+
             ##prepare os version 
             version_str = yowsupenv.getVersion()
             version_list = version_str.split('.')

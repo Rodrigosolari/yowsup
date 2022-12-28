@@ -68,6 +68,16 @@ class YowsupEnv(with_metaclass(YowsupEnvType, object)):
         logger.debug("Env not set, setting it to %s" % env)
         cls.setEnv(env)
         return cls.__CURR
+    
+    @classmethod
+    def getiOsEnv(cls):
+        env = "ios"
+        envs = cls.getRegisteredEnvs()
+        if env not in envs:
+            env = envs[0]
+        logger.debug("Env not set, setting it to %s" % env)
+        cls.setEnv(env)
+        return cls.__CURR
 
     @abc.abstractmethod
     def getToken(self, phoneNumber):
