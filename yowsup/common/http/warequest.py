@@ -1,9 +1,9 @@
 from .waresponseparser import ResponseParser
 from yowsup.env import YowsupEnv
 
-import re
 import sys
 import logging
+from .httpproxy import HttpProxy
 from axolotl.ecc.curve import Curve
 from axolotl.ecc.ec import ECPublicKey
 from yowsup.common.tools import WATools
@@ -262,34 +262,6 @@ class WARequest(object):
         return base64.urlsafe_b64encode(value).replace(b'=', b'')
 
     @classmethod
-    def parseProxy(cls, proxy):
-        '''
-        :param proxy: String with HTTP(s) proxy in pythonic format as following:
-        >>> # http[s]://{user}:{pwd}@{ip}:{port}
-        >>> # or http[s]://{ip}:{port} 
-        :type proxy: str
-        :return:
-        :rtype: Tuple[str, int, Optional[str]]
-        
-        '''
-        data = re.search(r'^http?://(.*?):(.*?)(?:@(.*?):(.*?))?$', proxy)
-        if data is None:
-            raise ValueError('Proxy has wrong format')
-        user, pwd, host, port = data.groups()
-        if not all((host, port)):
-            host, port = user, pwd
-            user = pwd = None
-        return host, int(port), WARequest.proxyAuth(user, pwd)
-    
-    @classmethod
-    def proxyAuth(cls, user, pwd):
-        if all((user, pwd)):
-            token = base64.b64encode(bytes(f"{user}:{pwd}", "utf-8")).decode("ascii")
-            return {
-                "Proxy-Authorization": f"Basic {token}"
-            }
-
-    @classmethod
     def urlencode(cls, value):
         if type(value) not in (str, bytes):
             value = str(value)
@@ -342,10 +314,11 @@ class WARequest(object):
             else:
                 conn_type = 'HTTP'
             connMethod = getattr(httplib, conn_type+'Connection')
+
             if isinstance(proxy, str):
-                proxy_host, proxy_port, proxy_auth = WARequest.parseProxy(proxy)
-                conn = connMethod(proxy_host, proxy_port)
-                conn.set_tunnel(host, port, headers=proxy_auth)
+                proxy = HttpProxy(proxy)
+                conn = connMethod(proxy.host, proxy.port)
+                conn.set_tunnel(host, port, headers=proxy.auth)
             else:
                 conn = connMethod(host, port)
         else:
