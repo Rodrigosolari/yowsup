@@ -42,7 +42,8 @@ class YowNetworkLayer(YowLayer, ConnectionCallbacks):
     def __create_dispatcher(self, dispatcher_type):
         if dispatcher_type == self.DISPATCHER_ASYNCORE:
             logger.debug("Created asyncore dispatcher")
-            return AsyncoreConnectionDispatcher(self)
+            proxy = self.getProp("PROXY")
+            return AsyncoreConnectionDispatcher(self, proxy)
         else:
             logger.debug("Created socket dispatcher")
             return SocketConnectionDispatcher(self)

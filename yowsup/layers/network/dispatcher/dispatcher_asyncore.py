@@ -1,4 +1,6 @@
 from yowsup.layers.network.dispatcher.dispatcher import YowConnectionDispatcher
+from yowsup.common.http import HttpProxy
+
 import asyncore
 import logging
 import socket
@@ -8,10 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncoreConnectionDispatcher(YowConnectionDispatcher, asyncore.dispatcher_with_send):
-    def __init__(self, connectionCallbacks):
+    def __init__(self, connectionCallbacks, proxy=None):
         super(AsyncoreConnectionDispatcher, self).__init__(connectionCallbacks)
         asyncore.dispatcher_with_send.__init__(self)
         self._connected = False
+        self._proxy_connected = False
+        self.proxy = HttpProxy(proxy, rtype='str')
 
     def sendData(self, data):
         if self._connected:
@@ -24,8 +28,20 @@ class AsyncoreConnectionDispatcher(YowConnectionDispatcher, asyncore.dispatcher_
         logger.debug("connect(%s)" % str(host))
         self.connectionCallbacks.onConnecting()
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        asyncore.dispatcher_with_send.connect(self, host)
+
+        if self.proxy.host and self.proxy.port:
+            self.send_proxy_connect_request(host)
+        else:
+            asyncore.dispatcher_with_send.connect(self, host)
         asyncore.loop(timeout=1)
+
+    def send_proxy_connect_request(self, host):
+        proxy_request = f"CONNECT {host[0]}:{host[1]} HTTP/1.1\r\n\r\nHost: {host[0]}:{host[1]}\r\n"
+        if self.proxy.auth:
+            proxy_request += self.proxy.auth
+            proxy_request += "\r\n"
+        asyncore.dispatcher_with_send.connect(self, (self.proxy.host, self.proxy.port))
+        self.send(proxy_request.encode(encoding='ascii'))
 
     def handle_connect(self):
         logger.debug("handle_connect")
