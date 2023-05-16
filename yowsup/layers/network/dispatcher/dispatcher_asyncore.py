@@ -1,3 +1,5 @@
+import time
+
 from yowsup.layers.network.dispatcher.dispatcher import YowConnectionDispatcher
 from yowsup.common.http import HttpProxy
 
@@ -25,28 +27,35 @@ class AsyncoreConnectionDispatcher(YowConnectionDispatcher, asyncore.dispatcher_
             logger.warn("Attempted to send %d bytes while still not connected" % len(data))
 
     def connect(self, host):
+        self.host = host
         logger.debug("connect(%s)" % str(host))
         self.connectionCallbacks.onConnecting()
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
 
         if self.proxy.host and self.proxy.port:
-            self.send_proxy_connect_request(host)
+            asyncore.dispatcher_with_send.connect(self, (self.proxy.host, self.proxy.port))
         else:
             asyncore.dispatcher_with_send.connect(self, host)
         asyncore.loop(timeout=1)
 
-    def send_proxy_connect_request(self, host):
-        proxy_request = f"CONNECT {host[0]}:{host[1]} HTTP/1.1\r\n\r\nHost: {host[0]}:{host[1]}\r\n"
+    def send_proxy_connect_request(self):
+        addr, port = self.host
+        proxy_request = f"CONNECT {addr}:{port} HTTP/1.1\r\nHost: {addr}:{port}\r\n"
         if self.proxy.auth:
             proxy_request += self.proxy.auth
-            proxy_request += "\r\n"
-        asyncore.dispatcher_with_send.connect(self, (self.proxy.host, self.proxy.port))
+            proxy_request += "\r\n\r\n"
         self.send(proxy_request.encode(encoding='ascii'))
+        self.socket.settimeout(5)
+        data = b''
+        while not data.endswith(b'\r\n\r\n'):
+            data += self.recv(1)
+        logger.debug("Received connection data from proxy: %s" % data.decode("utf-8").strip())
 
     def handle_connect(self):
         logger.debug("handle_connect")
         if not self._connected:
             self._connected = True
+            self.send_proxy_connect_request()
             self.connectionCallbacks.onConnected()
 
     def handle_close(self):
