@@ -45,7 +45,7 @@ class AsyncoreConnectionDispatcher(YowConnectionDispatcher, asyncore.dispatcher_
             proxy_request += self.proxy.auth
             proxy_request += "\r\n\r\n"
         self.send(proxy_request.encode(encoding='ascii'))
-        self.socket.settimeout(5)
+        self.socket.settimeout(10)
         data = b''
         while not data.endswith(b'\r\n\r\n'):
             data += self.recv(1)
@@ -55,7 +55,8 @@ class AsyncoreConnectionDispatcher(YowConnectionDispatcher, asyncore.dispatcher_
         logger.debug("handle_connect")
         if not self._connected:
             self._connected = True
-            self.send_proxy_connect_request()
+            if self.proxy.host and self.proxy.port:
+                self.send_proxy_connect_request()
             self.connectionCallbacks.onConnected()
 
     def handle_close(self):
