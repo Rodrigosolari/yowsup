@@ -118,8 +118,8 @@ class WARequest(object):
         self.params.append((name, value))
 
     def removeParam(self, name):
-        for i in range(0, len(self.params)):
-            if self.params[i][0] == name:
+        for i, val in enumerate(self.params):
+            if name in val:
                 del self.params[i]
 
     def addHeaderField(self, name, value):
@@ -143,7 +143,7 @@ class WARequest(object):
             encrypt, preview
         ))
         if self.type == "POST":
-            return self.sendPostRequest(parser, proxy)
+            return self.sendPostRequest(parser, encrypt, proxy)
 
         return self.sendGetRequest(parser, encrypt, preview, proxy)
 
@@ -233,9 +233,17 @@ class WARequest(object):
         self.sent = True
         return parser.parse(data.decode(), self.pvars)
 
-    def sendPostRequest(self, parser=None, proxy=None):
+    def sendPostRequest(self, parser=None, encrypt_params=True, proxy=None):
         self.response = None
-        params = self.params  # [param.items()[0] for param in self.params];
+
+        if encrypt_params:
+            logger.debug("Encrypting parameters")
+            if logger.level <= logging.DEBUG:
+                logger.debug("pre-encrypt (encoded) parameters = \n%s", (self.urlencodeParams(self.params)))
+            params = self.encryptParams(self.params, self.ENC_PUBKEY)
+        else:
+            ## params will be logged right before sending
+            params = self.params
 
         parser = parser or self.parser or ResponseParser()
 
@@ -245,7 +253,7 @@ class WARequest(object):
                              }.items()) + list(self.headers.items()))
 
         host, port, path = self.getConnectionParameters()
-        self.response = WARequest.sendRequest(host, port, path, headers, params, "POST", proxy)
+        self.response = WARequest.sendRequest(host, port, path, headers, params, "POST", proxy=proxy)
 
         if not self.response.status == WARequest.OK:
             logger.error("Request not success, status was %s" % self.response.status)
@@ -328,9 +336,11 @@ class WARequest(object):
         if not preview:
             logger.debug("Sending %s request to %s" % (reqType, path))
             conn.request(reqType, path, params, headers)
+
         else:
             logger.debug("Should send %s request to %s, but this is a preview" % (reqType, path))
             return None
 
         response = conn.getresponse()
         return response
+ 
