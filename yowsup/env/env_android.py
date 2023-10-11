@@ -50,6 +50,7 @@ class AndroidYowsupEnv(YowsupEnv):
         return self.__class__._AXOLOTL
 
     def getToken(self, phoneNumber):
+        print (phoneNumber)
         keyDecoded = bytearray(base64.b64decode(self.__class__._KEY))
         sigDecoded = base64.b64decode(self.__class__._SIGNATURE)
         clsDecoded = base64.b64decode(self.__class__._MD5_CLASSES)

@@ -32,8 +32,4 @@ class WACaptchaRequest(WARequest):
     def send(self, parser=None, encrypt=True, preview=False, proxy=None):
         super(WACaptchaRequest, self).removeParam("mistyped")
         res = super(WACaptchaRequest, self).send(parser, encrypt=encrypt, preview=preview, proxy=proxy)
-<<<<<<< HEAD
         return res
-=======
-        return res
->>>>>>> master

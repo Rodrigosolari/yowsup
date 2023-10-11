@@ -20,6 +20,8 @@ class WACodeRequest(WARequest):
         self.addParam("sim_mnc", config.sim_mnc.zfill(3))
         self.addParam("method", method)
         self.addParam("reason", "")
+        print("reason")
+        print(self._p_in)
         self.addParam("token", YowsupEnv.getCurrent().getToken(self._p_in))
         self.addParam("hasav", "1")
 
@@ -27,13 +29,8 @@ class WACodeRequest(WARequest):
         if method == "captcha":
             self.pvars = ["status", "login", "audio_blob", "image_blob"]
         else:
-<<<<<<< HEAD
-            self.pvars = ["status","reason","length", "method", "retry_after", "code", "param"] +\
-                        ["login", "type", "sms_wait", "voice_wait"]
-=======
             self.pvars = ["status", "reason", "length", "method", "retry_after", "code", "param"] +\
                 ["login", "type", "sms_wait", "voice_wait"]
->>>>>>> master
         self.setParser(JSONResponseParser())
 
     def send(self, parser = None, encrypt=True, preview=False, proxy=None):
