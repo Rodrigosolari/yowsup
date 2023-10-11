@@ -113,9 +113,9 @@ class JSONResponseParser(ResponseParser):
         d = json.loads(jsonData)
         pvars = self.getVars(pvars)
         
-        parsed = {}     
+        parsed = {}
         
-        for k,v in pvars.items():
+        for k, v in pvars.items():
             parsed[k] = self.query(d, v)
 
         return parsed

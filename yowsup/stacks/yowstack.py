@@ -196,7 +196,7 @@ class YowStack(object):
                 callback = self.__class__.__detachedQueue.get(False) #doesn't block
                 callback()
             except Queue.Empty:
-                pass
+                return
             time.sleep(0.1)
 
     def _construct(self):

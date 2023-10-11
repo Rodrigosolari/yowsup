@@ -192,6 +192,13 @@ class ReadDecoder:
         if token in (236, 237, 238, 239):
             return self.getTokenDouble(token - 236, self.readInt8(data))
 
+        if token == 247:
+            xx = self.readInt8(data)
+            device_no = self.readInt8(data)
+            phone = self.readString(data.pop(0), data)
+            jid = "{}.{}:{}@s.whatsapp.net".format(phone, xx, device_no)
+            return jid
+
         if token == 250:
             user = self.readString(data.pop(0), data)
             server = self.readString(data.pop(0), data)

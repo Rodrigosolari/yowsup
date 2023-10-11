@@ -32,14 +32,14 @@ class YowsupEnv(with_metaclass(YowsupEnvType, object)):
         if not envName in cls.__ENVS:
             raise ValueError("%s env does not exist" % envName)
         logger.debug("Current env changed to %s " % envName)
-        cls.__CURR = cls.__ENVS[envName]()
+        cls.__CURR = cls.__ENVS[envName]
 
     @classmethod
     def getEnv(cls, envName):
         if not envName in cls.__ENVS:
             raise ValueError("%s env does not exist" % envName)
 
-        return cls.__ENVS[envName]()
+        return cls.__ENVS[envName]
 
     @classmethod
     def getRegisteredEnvs(cls):

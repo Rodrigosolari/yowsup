@@ -194,11 +194,19 @@ class Config(config.Config):
     @lg.setter
     def lg(self, value):
         self._lg = value
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> master
     @property
     def lc(self):
         return self._lg
 
     @lc.setter
     def lg(self, value):
+<<<<<<< HEAD
         self._lc = value
+=======
+        self._lc = value
+>>>>>>> master

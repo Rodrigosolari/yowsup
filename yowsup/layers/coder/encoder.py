@@ -160,12 +160,20 @@ class WriteEncoder:
         return res;
 
     def writeJid(self, user, server, data):
-        data.append(250)
-        if user is not None:
+        if user.find(":") != -1:
+            device_no = user.split("@")[0].split(":")[1]
+            data.append(247)
+            data.append(0)
+            data.append(int(device_no))
+            user = user.split(".")[0]
             self.writeString(user, data, True)
         else:
-            self.writeToken(0, data)
-        self.writeString(server, data)
+            data.append(250)
+            if user is not None:
+                self.writeString(user, data, True)
+            else:
+                self.writeToken(0, data)
+            self.writeString(server, data)
 
 
     def tryPackAndWriteHeader(self, v, headerData, data):

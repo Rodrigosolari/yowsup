@@ -27,14 +27,19 @@ class WACodeRequest(WARequest):
         if method == "captcha":
             self.pvars = ["status", "login", "audio_blob", "image_blob"]
         else:
+<<<<<<< HEAD
             self.pvars = ["status","reason","length", "method", "retry_after", "code", "param"] +\
                         ["login", "type", "sms_wait", "voice_wait"]
+=======
+            self.pvars = ["status", "reason", "length", "method", "retry_after", "code", "param"] +\
+                ["login", "type", "sms_wait", "voice_wait"]
+>>>>>>> master
         self.setParser(JSONResponseParser())
 
-    def send(self, parser = None, encrypt=True, preview=False):
+    def send(self, parser = None, encrypt=True, preview=False, proxy=None):
         if self._config.id is not None:
             request = WAExistsRequest(self._config)
-            result = request.send(encrypt=encrypt, preview=preview)
+            result = request.send(encrypt=encrypt, preview=preview, proxy=proxy)
 
             if result:
                 if result["status"] == "ok":
@@ -45,6 +50,6 @@ class WACodeRequest(WARequest):
             self._config.id = WATools.generateIdentity()
             self.addParam("id", self._config.id)
 
-        res = super(WACodeRequest, self).send(parser, encrypt=encrypt, preview=preview)
+        res = super(WACodeRequest, self).send(parser, encrypt=encrypt, preview=preview, proxy=proxy)
 
         return res

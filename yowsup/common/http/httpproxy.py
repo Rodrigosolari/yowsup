@@ -26,69 +26,46 @@ try:
 except ImportError:
     from urlparse import urlparse
 
+
 class HttpProxy:
-
-    def __init__(self, address, username = None, password = None):
-        self.address = address
-        self.username = username
-        self.password = password
-
-    def __repr__(self):
-        return repr(self.address)
-
-    def handler(self):
-        return HttpProxyHandler(self)
-
-    @staticmethod
-    def getFromEnviron():
-        url = None
-        for key in ('http_proxy', 'https_proxy'):
-            url = os.environ.get(key)
-            if url: break
-        if not url:
-            return None
-        dat = urlparse(url)
-        port = 80 if dat.scheme == 'http' else 443
-        if dat.port != None: port = int(dat.port)
-        host = dat.hostname
-        return HttpProxy((host, port), dat.username, dat.password)
-
-class HttpProxyHandler:
-
-    def __init__(self, proxy):
+    def __init__(self, proxy=None, rtype='dict'):
+        '''
+        :type proxy: str
+        :type rtype: Literal['dict', 'str']
+        '''
+        self._rtype = rtype
+        self._parse(proxy)
         self.state = 'init'
-        self.proxy = proxy
 
-    def onConnect(self):
-        pass
-
-    def connect(self, socket, pair):
-        proxy = self.proxy
-        authHeader = None
-        if proxy.username and proxy.password:
-            key = bytes(proxy.username, 'ascii') + b':' + bytes(proxy.password, 'ascii') if (bytes != str) else bytes(proxy.username) + b':' + proxy.password
-            auth = base64.b64encode(key)
-            authHeader = b'Proxy-Authorization: Basic ' + auth + b'\r\n'
-        data = bytearray('CONNECT %s:%d HTTP/1.1\r\nHost: %s:%d\r\n' % (2 * pair), 'ascii')
-        if authHeader:
-            data += authHeader
-        data += b'\r\n'
-        self.state = 'connect'
-        self.data = data
-        socket.connect(proxy.address)
-
-    def send(self, socket):
-        if self.state == 'connect':
-            socket.send(self.data)
-            self.state = 'sent'
-
-    def recv(self, socket, size):
-        if self.state == 'sent':
-            data = socket.recv(size)
-            data = data.decode('ascii')
-            status = data.split(' ', 2)
-            if status[1] != '200':
-                raise Exception('%s' % (data[:data.index('\r\n')]))
-            self.state = 'end'
-            self.onConnect()
-            return data
+    def _parse(self, proxy):
+        '''
+        :param proxy: String with HTTP(s) proxy in pythonic format as following:
+        >>> # http[s]://{user}:{pwd}@{ip}:{port}
+        >>> # or http[s]://{ip}:{port} 
+        :type proxy: str
+        :return:
+        :rtype: Optional[Tuple[str, int, Optional[str]]]
+        '''
+        if isinstance(proxy, str):
+            proxy = urlparse(proxy)
+            if not all((proxy.hostname, proxy.port)):
+                raise ValueError('Proxy has wrong format')
+            self.host = proxy.hostname
+            self.port = proxy.port
+            self.auth = self._proxy_auth(proxy.username, proxy.password)
+        else:
+            self.host = self.port = self.auth = None
+    
+    def _proxy_auth(self, user, pwd):
+        '''
+        :type user: str
+        :type pwd: str
+        :return:
+        :rtype: Optional[Union[Dict[str, str], str]]
+        '''
+        if all((user, pwd)):
+            token = base64.b64encode(bytes(f"{user}:{pwd}", "utf-8")).decode("ascii")
+            if self._rtype == 'dict':
+                return {"Proxy-Authorization": f"Basic {token}"}
+            else:
+                return f"Proxy-Authorization: Basic {token}"
