@@ -4,7 +4,7 @@ from six import with_metaclass
 
 logger = logging.getLogger(__name__)
 
-DEFAULT = "ios"
+DEFAULT = "android"
 
 
 class YowsupEnvType(abc.ABCMeta):
