@@ -3,6 +3,7 @@ from yowsup.env import YowsupEnv
 
 import sys
 import logging
+from .httpproxy import HttpProxy
 from axolotl.ecc.curve import Curve
 from axolotl.ecc.ec import ECPublicKey
 from yowsup.common.tools import WATools
@@ -117,8 +118,8 @@ class WARequest(object):
         self.params.append((name, value))
 
     def removeParam(self, name):
-        for i in range(0, len(self.params)):
-            if self.params[i][0] == name:
+        for i, val in enumerate(self.params):
+            if name in val:
                 del self.params[i]
 
     def addHeaderField(self, name, value):
@@ -130,15 +131,21 @@ class WARequest(object):
     def getUserAgent(self):
         return YowsupEnv.getCurrent().getUserAgent()
 
-    def send(self, parser=None, encrypt=True, preview=False):
+    def send(
+        self,
+        parser=None,
+        encrypt=True,
+        preview=False,
+        proxy=None
+    ):
         logger.debug("send(parser=%s, encrypt=%s, preview=%s)" % (
             None if parser is None else "[omitted]",
             encrypt, preview
         ))
         if self.type == "POST":
-            return self.sendPostRequest(parser)
+            return self.sendPostRequest(parser, encrypt, proxy)
 
-        return self.sendGetRequest(parser, encrypt, preview=preview)
+        return self.sendGetRequest(parser, encrypt, preview, proxy)
 
     def setParser(self, parser):
         if isinstance(parser, ResponseParser):
@@ -182,7 +189,7 @@ class WARequest(object):
         payload = base64.b64encode(keypair.publicKey.serialize()[1:] + ciphertext)
         return [('ENC', payload)]
 
-    def sendGetRequest(self, parser=None, encrypt_params=True, preview=False):
+    def sendGetRequest(self, parser=None, encrypt_params=True, preview=False, proxy=None):
         logger.debug("sendGetRequest(parser=%s, encrypt_params=%s, preview=%s)" % (
             None if parser is None else "[omitted]",
             encrypt_params, preview
@@ -210,7 +217,7 @@ class WARequest(object):
 
         host, port, path = self.getConnectionParameters()
 
-        self.response = WARequest.sendRequest(host, port, path, headers, params, "GET", preview=preview)
+        self.response = WARequest.sendRequest(host, port, path, headers, params, "GET", preview, proxy)
 
         if preview:
             logger.info("Preview request, skip response handling and return None")
@@ -226,9 +233,17 @@ class WARequest(object):
         self.sent = True
         return parser.parse(data.decode(), self.pvars)
 
-    def sendPostRequest(self, parser=None):
+    def sendPostRequest(self, parser=None, encrypt_params=True, proxy=None):
         self.response = None
-        params = self.params  # [param.items()[0] for param in self.params];
+
+        if encrypt_params:
+            logger.debug("Encrypting parameters")
+            if logger.level <= logging.DEBUG:
+                logger.debug("pre-encrypt (encoded) parameters = \n%s", (self.urlencodeParams(self.params)))
+            params = self.encryptParams(self.params, self.ENC_PUBKEY)
+        else:
+            ## params will be logged right before sending
+            params = self.params
 
         parser = parser or self.parser or ResponseParser()
 
@@ -238,7 +253,7 @@ class WARequest(object):
                              }.items()) + list(self.headers.items()))
 
         host, port, path = self.getConnectionParameters()
-        self.response = WARequest.sendRequest(host, port, path, headers, params, "POST")
+        self.response = WARequest.sendRequest(host, port, path, headers, params, "POST", proxy=proxy)
 
         if not self.response.status == WARequest.OK:
             logger.error("Request not success, status was %s" % self.response.status)
@@ -281,7 +296,17 @@ class WARequest(object):
         return "&".join(merged)
 
     @classmethod
-    def sendRequest(cls, host, port, path, headers, params, reqType="GET", preview=False):
+    def sendRequest(
+        cls,
+        host,
+        port,
+        path,
+        headers,
+        params,
+        reqType="GET",
+        preview=False,
+        proxy=None
+    ):
         logger.debug("sendRequest(host=%s, port=%s, path=%s, headers=%s, params=%s, reqType=%s, preview=%s)" % (
             host, port, path, headers, params, reqType, preview
         ))
@@ -289,10 +314,21 @@ class WARequest(object):
         params = cls.urlencodeParams(params)
 
         path = path + "?" + params if reqType == "GET" and params else path
-
+        
         if not preview:
             logger.debug("Opening connection to %s" % host)
-            conn = httplib.HTTPSConnection(host, port) if port == 443 else httplib.HTTPConnection(host, port)
+            if port == 443:
+                conn_type = 'HTTPS'
+            else:
+                conn_type = 'HTTP'
+            connMethod = getattr(httplib, conn_type+'Connection')
+
+            if isinstance(proxy, str):
+                proxy = HttpProxy(proxy)
+                conn = connMethod(proxy.host, proxy.port)
+                conn.set_tunnel(host, port, headers=proxy.auth)
+            else:
+                conn = connMethod(host, port)
         else:
             logger.debug("Should open connection to %s, but this is a preview" % host)
             conn = None
@@ -300,9 +336,11 @@ class WARequest(object):
         if not preview:
             logger.debug("Sending %s request to %s" % (reqType, path))
             conn.request(reqType, path, params, headers)
+
         else:
             logger.debug("Should send %s request to %s, but this is a preview" % (reqType, path))
             return None
 
         response = conn.getresponse()
         return response
+ 

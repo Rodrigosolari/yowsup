@@ -12,7 +12,7 @@ class WACodeRequest(WARequest):
         :param config:
         :type config: yowsup.config.v1.config.Config
         """
-        super(WACodeRequest,self).__init__(config)
+        super(WACodeRequest, self).__init__(config)
 
         self.addParam("mcc", config.mcc.zfill(3))
         self.addParam("mnc", config.mnc.zfill(3))
@@ -24,9 +24,11 @@ class WACodeRequest(WARequest):
         self.addParam("hasav", "1")
 
         self.url = "v.whatsapp.net/v2/code"
-
-        self.pvars = ["status","reason","length", "method", "retry_after", "code", "param"] +\
-                    ["login", "type", "sms_wait", "voice_wait"]
+        if method == "captcha":
+            self.pvars = ["status", "login", "audio_blob", "image_blob"]
+        else:
+            self.pvars = ["status","reason","length", "method", "retry_after", "code", "param"] +\
+                        ["login", "type", "sms_wait", "voice_wait"]
         self.setParser(JSONResponseParser())
 
     def send(self, parser = None, encrypt=True, preview=False):

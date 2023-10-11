@@ -22,7 +22,9 @@ class Config(config.Config):
             expid=None,
             fdid=None,
             edge_routing_info=None,
-            chat_dns_domain=None
+            chat_dns_domain=None,
+            lg='en',
+            lc='GB'
     ):
         super(Config, self).__init__(1)
 
@@ -42,6 +44,8 @@ class Config(config.Config):
         self._sim_mnc = sim_mnc
         self._edge_routing_info = edge_routing_info
         self._chat_dns_domain = chat_dns_domain
+        self._lg = lg
+        self._lc = lc
 
         if self._password is not None:
             logger.warn("Setting a password in Config is deprecated and not used anymore. "
@@ -182,3 +186,19 @@ class Config(config.Config):
     @chat_dns_domain.setter
     def chat_dns_domain(self, value):
         self._chat_dns_domain = value
+
+    @property
+    def lg(self):
+        return self._lg
+
+    @lg.setter
+    def lg(self, value):
+        self._lg = value
+
+    @property
+    def lc(self):
+        return self._lg
+
+    @lc.setter
+    def lg(self, value):
+        self._lc = value
